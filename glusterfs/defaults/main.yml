@@ -1,0 +1,7 @@
+---
+gluster_volume_name: ""
+options: ""
+gluster_volume_dir: ""
+quota: ""
+bricks: ""
+cluster: ""

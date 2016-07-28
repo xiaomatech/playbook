@@ -1,0 +1,54 @@
+---
+- name: install latest version of required packets
+  yum: name={{ item }} state=latest
+  with_items:
+    - libvirt
+    - qemu-kvm
+    - qemu-kvm-tools
+    - qemu-guest-agent
+    - python-virtinst
+    - libssh2
+    - libguestfs-tools
+    - bridge-utils
+    - guestfish
+    - vconfig
+    - lvm2
+    - quota
+
+- name: copy kvm.conf module 
+  copy: src=kvm.conf dest=/etc/modules-load.d/kvm.conf owner=root group=root mode=0755
+
+- name: copy dpdk.conf module
+  copy: src=dpdk.conf dest=/etc/modules-load.d/dpdk.conf owner=root group=root mode=0755
+  when: dpdk is defined and dpdk !='' and "net_type == 'dpdk'"
+
+- name: find host disk
+  shell: for dev in /dev/sd?;do echo $dev;done|grep -v sda
+  register: host_disk_out
+
+- name: register host_disk
+  set_fact: host_disk={{ host_disk_out.stdout }}
+
+- name: create vm volume group
+  lvg:  vg={{vm_volume_group}} pvs=host_disk.splict()
+
+- name: disable virbr0
+  shell: service libvirtd start && virsh net-list && virsh net-destroy default && virsh net-undefine default && service libvirtd restart
+
+- name: disable ksm
+  shell: chkconfig ksm off && chkconfig ksmtuned off
+
+- name: create storage pool
+  shell: virsh pool-define-as —name {{vm_volume_group}} —type logical —target /dev/{{vm_volume_group}} && virsh pool-build {{vm_volume_group}}  && virsh pool-autostart {{vm_volume_group}} && virsh pool-start {{vm_volume_group}}
+
+- name: hugepages on
+  shell: mount -t hugetlbfs hugetlbfs /dev/hugepages && sysctl vm.nr_hugepages=516 && echo 'always'>/sys/kernel/mm/transparent_hugepage/enabled &&echo 'always'>/sys/kernel/mm/transparent_hugepage/defrag && echo 'vm.nr_hugepages=516'>/etc/sysctl.d/hugepages.conf
+
+- name: copy sriov init 
+  copy: src=sriov.sh dest=/tmp/sriov.sh owner=root group=root mode=0755 
+  when: "net_type == 'sriov'"
+
+- name: sriov init
+  shell: chmod a+x /tmp/sriov.sh && /tmp/sriov.sh
+  when: "net_type == 'sriov'"
+

@@ -1,0 +1,7 @@
+- name: Install ovs
+  yum: name={{ item }} state=latest
+  with_items:
+    - openvswitch
+    - openvswitch-ovn-vtep
+    - openvswitch-ovn-host
+    - openvswitch-ovn-docker

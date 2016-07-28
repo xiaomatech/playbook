@@ -1,0 +1,35 @@
+---
+# file: roles/cdh_zookeeper_server/tasks/main.yml
+
+- name: install zookeeper-server
+  yum: name={{ item }} state=latest
+  with_items:
+    - zookeeper
+    - zookeeper-server
+  tags: zookeeper
+
+- name: copy /etc/zookeeper/conf.dist to /etc/zookeeper/conf.{{ site_name|lower }}
+  command: creates=/etc/zookeeper/conf.{{ site_name|lower }} cp -R -p /etc/zookeeper/conf.dist /etc/zookeeper/conf.{{ site_name|lower }}
+  tags: zookeeper
+
+- name: run 'update-alternatives' to install ZooKeeper configuration
+  command: update-alternatives --install /etc/zookeeper/conf zookeeper-conf /etc/zookeeper/conf.{{ site_name|lower }} 50
+  tags: zookeeper
+
+- name: run 'update-alternatives' to set ZooKeeper configuration
+  command: update-alternatives --set zookeeper-conf /etc/zookeeper/conf.{{ site_name|lower }}
+  tags: zookeeper
+
+- name: create /var/lib/zookeeper directory
+  file: path=/var/lib/zookeeper owner=zookeeper group=zookeeper state=directory
+  tags: zookeeper
+
+- name: configure ZooKeeper in /etc/zookeeper/conf.{{ site_name|lower }}
+  template: src=zoo.cfg dest=/etc/zookeeper/conf.{{ site_name|lower }}/zoo.cfg owner=zookeeper group=zookeeper mode=0644
+  notify:
+    - restart zookeeper
+  tags: zookeeper
+
+- name: initialize ZooKeeper
+  command: creates=/var/lib/zookeeper/myid service zookeeper-server init --myid={{ zookeeper_id }}
+  tags: zookeeper

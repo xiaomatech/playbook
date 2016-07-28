@@ -1,0 +1,24 @@
+- name: Check hugepages support
+  fail: msg="Hugepage support was not detected on your system.  Hugepage support is required for DPDK."
+  when: hugepages_1G.stdout == false and hugepages_2M.stdout == false
+
+- name: Install dpdk
+  yum: name={{ item }} state=latest
+  with_items:
+    - dpdk
+    - dpdk-devel
+  when: hugepages_1G.stdout == true or hugepages_2M.stdout == true
+
+- name: copy dpdk.conf module 
+  copy: src=dpdk.conf dest=/etc/modules-load.d/dpdk.conf owner=root group=root mode=0755
+
+- name: Create DPDK scripts
+  template: 
+    src: "templates/shell/{{ item }}.j2" 
+    dest: "/usr/sbin/{{ item }}"
+    mode: 0755
+  with_items: 
+    - dpdk_uio
+    - dpdk_vfio
+
+# todo change to ovs-vswitchd --dpdk -c 0x1 -n 4

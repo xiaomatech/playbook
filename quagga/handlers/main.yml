@@ -1,0 +1,22 @@
+---
+
+- name: restart bgpd
+  service: name=bgpd state=restarted
+
+- name: restart ospfd
+  service: name=ospfd state=restarted
+
+- name: restart ospf6d
+  service: name=ospf6d state=restarted
+
+- name: restart ripd
+  service: name=ripd state=restarted
+
+- name: restart ripngd
+  service: name=ripngd state=restarted
+
+- name: restart zebra
+  service: name=zebra state=restarted
+
+- name: restart conntrackd
+  service: name=conntrackd state=restarted

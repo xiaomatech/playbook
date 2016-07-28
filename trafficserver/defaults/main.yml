@@ -1,0 +1,83 @@
+---
+
+# Install latest version
+ats_daemon: trafficserver
+ats_user: trafficserver
+ats_group: trafficserver
+
+# Records.conf
+# All records are parsed using jinja2, the defaults are in the template
+#  records.config.js using the default filter
+# The format is:
+# ats_records[.param.param2...]
+# We set the name
+ats_records:
+  proxy:
+    config:
+      proxy_name: "ats"
+      http_ui_enabled: 1
+      admin:
+        user_id: "{{ ats_user }}"
+      http:
+        server_ports: "80,443"
+        insert_response_via_str: 1
+      cache:
+        max_doc_size: 0
+        when_to_revalidate: 4
+        required_headers: 0
+      reverse_proxy:
+        enabled: 1
+      url_remap:
+        remap_required: 1
+        # If 1, the requested host if forward, use with virtual hosts
+        pristine_host_hdr: 1
+      header:
+        parsed:
+          no_host_url_redirect: http://nohost.com
+
+# Map requests
+ats_mapping:
+  - src: http://trafficserver
+    dest: http://{cache}
+    #type: map  # Map is the default, not necessary
+    #params:
+      #action: allow
+      #src_ip: 127.0.0.1
+      
+  - src: http://your.proxy.server.com
+    dest: http://daemonkeeper.net
+    #type: map  # Map is the default, not necessary
+
+  - src: http://([a-z\-0-9\.]+)
+    dest: http://daemonkeeper.com?request=$1
+    type: regex_map
+
+ats_filecaches:
+  - loc: /var/cache/trafficserver
+    size: 256M
+  
+# A list of raw devices to use  
+ats_rawcaches: []
+  
+ats_allowed_ips:
+  - ip: 127.0.0.1
+    action: ip_allow
+    method: ALL
+  - ip: ::1
+    action: ip_allow
+    method: ALL
+  - ip: 0.0.0.0-255.255.255.255
+    action: ip_deny
+    method: PUSH|PURGE|DELETE
+  - ip: ::-ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+    action: ip_deny
+    method: PUSH|PURGE|DELETE
+    
+ats_certificates: []
+  # - dest_ip: 
+    # ssl_key_name:
+    # ssl_ca_name:
+    # ssl_cert_name:
+    # ssl_key_dialog:
+    # action:
+  

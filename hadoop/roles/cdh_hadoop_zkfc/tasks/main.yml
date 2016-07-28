@@ -1,0 +1,6 @@
+---
+# file: roles/cdh_hadoop_zkfc/tasks/main.yml
+
+- name: install hadoop-hdfs-zkfc (Hadoop HDFS Zookeeper Failover Controller)
+  yum: name=hadoop-hdfs-zkfc state=latest
+  tags: hadoop

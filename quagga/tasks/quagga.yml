@@ -1,0 +1,27 @@
+---
+- name: ensuring vlan package is installed
+  apt: name=vlan state=present
+
+- name: config_quagga | configuring network settings
+  sysctl: name="{{ item.name }}" value="{{ item.value }}" state=present reload=yes
+  with_items: sysctl_network_settings
+  when: sysctl_network_settings is defined
+
+- name: configuring quagga
+  template: src=quagga/{{ item }}.j2 dest={{ quagga_root_dir }}/{{ item }} owner=root group=root mode=0644
+  with_items: quagga_configs
+
+- name: configuring ospf
+  template: src=etc/quagga/ospfd.conf.j2 dest={{ quagga_root_dir }}/ospfd.conf owner=root group=root mode=0644
+  notify: restart ospfd
+  with_items: quagga_ospf_router_configs
+  when: quagga_enable_ospfd is defined and quagga_enable_ospfd
+
+- name: configuring bgp
+  template: src=etc/quagga/bgpd.conf.j2 dest={{ quagga_root_dir }}/bgpd.conf owner=root group=root mode=0644
+  notify: restart bgpd
+  with_items: quagga_bgp_router_configs
+  when: quagga_enable_bgpd is defined and quagga_enable_bgpd
+
+- name: setting permissions on files within /etc/quagga
+  file: path=/etc/quagga/ owner=quagga group=quagga mode=0644 state=directory recurse=yes

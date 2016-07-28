@@ -1,0 +1,34 @@
+# This is for CentOS6
+common_iptables_state: "stopped"
+# This is for CentOS7
+common_firewalld_state: "stopped"
+
+common_hosts_replace: False
+common_hosts_tmpl: "hosts.default"
+
+common_selinux_state: "disabled"
+
+common_config_hostname: False
+
+common_lang: 'en_US.UTF-8'
+
+
+
+# Using the value 1 in order to avoid swapping and OOMs, since servers should have plenty of memory.
+kernel_swappiness: 1
+
+# Open file limits.
+limits_nofile_hard: 65536
+limits_nofile_soft: 65536
+
+# Configure which NTP servers are used to synchronize time.
+ntp_server1: 1.cn.pool.ntp.org
+ntp_server2: 2.cn.pool.ntp.org
+ntp_server3: 3.cn.pool.ntp.org
+ntp_server4: 0.cn.pool.ntp.org
+ntp_server5: cn.pool.ntp.org
+ntp_server6: tw.pool.ntp.org
+ntp_server7: 1.tw.pool.ntp.org
+
+# Configure rsyslog polling.
+rsyslog_polling_interval_secs: 10

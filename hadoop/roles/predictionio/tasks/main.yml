@@ -1,0 +1,7 @@
+---
+
+- name: install required packages
+  yum: name=predictionio state=latest
+
+- name: start predictionio on boot
+  shell: chkconfig predictionio on

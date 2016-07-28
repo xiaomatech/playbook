@@ -1,0 +1,6 @@
+---
+# file: roles/cdh_hadoop_yarn_resourcemanager/tasks/main.yml
+
+- name: install hadoop-yarn-resourcemanager 
+  yum: name=hadoop-yarn-resourcemanager state=latest
+  tags: hadoop

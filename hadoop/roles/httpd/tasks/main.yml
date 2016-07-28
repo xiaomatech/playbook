@@ -1,0 +1,20 @@
+---
+
+- name: install_httpd
+  yum: name=httpd state=installed
+- name: copy_httpd.conf_for_centos6
+  template: src=httpd.conf.centos6.j2 dest=/etc/httpd/conf/httpd.conf
+  notify:
+    - restart_httpd
+  when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '6'
+
+- name: copy_httpd.conf_for_centos7
+  template: src=httpd.conf.centos7.j2 dest=/etc/httpd/conf/httpd.conf
+  notify:
+    - restart_httpd
+  when: ansible_distribution == 'CentOS' and ansible_distribution_major_version == '7'
+
+- include: service.yml tags=service,httpd
+
+- name: start_httpd
+  service: name=httpd state=started enabled=yes

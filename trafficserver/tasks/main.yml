@@ -1,0 +1,25 @@
+---
+
+- name: Installing trafficserver packages.
+    yum: pkg={{ item }} state=latest
+    with_items:
+      - trafficserver
+    tags:
+     - install
+
+- name: update configuration files for ats
+  template:
+    src: "{{ item }}.j2"
+    dest: /etc/trafficserver/{{ item }}
+    owner: "{{ ats_user }}"
+    group: "{{ ats_group }}"
+    mode: 0640
+  notify: restart ats
+  tags: [configuration, ats]
+  with_items:
+    - records.config
+    - remap.config
+    - storage.config
+    - cache.config
+    - ip_allow.config
+    - ssl_multicert.config

@@ -1,0 +1,51 @@
+---
+#- hosts: 192.168.5.64
+#  tasks:
+  - name: set store_size var
+    shell: awk '$2~"d[0-1][0-9]"{print $2}' /etc/fstab | wc -l 
+    register: store_size
+
+  - name: set store_number var
+    shell: awk '$2~"d[0-1][0-9]"{print $2}' /etc/fstab | cut -b 3,4
+    register: store_number
+
+  - name: add fdfs_service
+    shell: /sbin/chkconfig --add {{ item }}
+    with_items: 
+      - fdfs_trackerd
+      - fdfs_storaged
+
+  - name: template tracker.conf
+    template: src=tracker.conf.j2 dest=/etc/fdfs/tracker.conf force=yes
+#    notify: restart fdfs_trackerd
+  - service: name=fdfs_trackerd state=restarted
+    when: ansible_hostname.find('TJ')  != -1
+
+  - name: template storage.conf
+    template: src=storage.conf.j2 dest=/etc/fdfs/storage.conf force=yes
+
+  - name: template client.conf
+    template: src=client.conf.j2 dest=/etc/fdfs/client.conf force=yes
+
+  - name: change store_path
+    replace: dest=/etc/fdfs/{{ item }}  regexp=^store_path0 replace=store_path
+    with_items: 
+      - 'storage.conf'
+#    notify: restart fdfs_storaged
+
+  - service: name={{ item }} state=restarted
+    with_items: 
+      - fdfs_trackerd
+      - fdfs_storaged
+
+  - pause: minutes=3
+
+  - name: Create symbolic link01
+    file: src=/d{{ item }}/data/ dest=/home/html/M{{ item }} state=link force=yes
+    with_items:
+      - "{{ store_number.stdout_lines }}"
+  - name: Create symbolic link02
+    file: src=/d{{ item }}/data/ dest=/d{{ item }}/data/M{{ item }} state=link force=yes
+    with_items:
+      - "{{ store_number.stdout_lines }}"
+

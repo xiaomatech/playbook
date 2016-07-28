@@ -1,0 +1,106 @@
+---
+
+# Configure SYSCTL adjust these values to your instance 
+  - sysctl: name=net.ipv4.tcp_rmem value='4096 1048576 8388608' state=present sysctl_set=yes ignoreerrors=yes
+  - sysctl: name=net.core.rmem_max value=8388608 state=present sysctl_set=yes ignoreerrors=yes
+  - sysctl: name=net.core.wmem_max value=8388608 state=present sysctl_set=yes ignoreerrors=yes
+  - sysctl: name=net.ipv4.tcp_tw_recycle value=0 state=present sysctl_set=yes ignoreerrors=yes
+  - sysctl: name=net.ipv4.tcp_tw_reuse value=1 state=present sysctl_set=yes ignoreerrors=yes
+  - sysctl: name=net.ipv4.tcp_fin_timeout value=20 state=present sysctl_set=yes ignoreerrors=yes
+  - sysctl: name=net.ipv4.tcp_keepalive_time value=60 state=present sysctl_set=yes ignoreerrors=yes
+  - sysctl: name=net.ipv4.tcp_keepalive_probes value=9 state=present sysctl_set=yes ignoreerrors=yes
+  - sysctl: name=net.ipv4.tcp_keepalive_intvl value=5 state=present sysctl_set=yes ignoreerrors=yes
+  - sysctl: name=fs.file-max value=6815744 state=present sysctl_set=yes ignoreerrors=yes
+  - sysctl: name=net.ipv4.ip_local_port_range value='2000 65500' state=present sysctl_set=yes ignoreerrors=yes
+  - sysctl: name="net.bridge.bridge-nf-call-ip6tables"  state=absent ignoreerrors=yes
+  - sysctl: name="net.bridge.bridge-nf-call-iptables"  state=absent ignoreerrors=yes
+  - sysctl: name="net.bridge.bridge-nf-call-arptables"  state=absent ignoreerrors=yes
+  - sysctl: name=vm.swappiness value=0 state=present sysctl_file=/etc/sysctl.conf sysctl_set=yes ignoreerrors=yes
+
+  # propagate SSH private key 
+  - template: src=.ssh/id_rsa dest=/root/.ssh/id_rsa owner=root group=root mode=0400
+    sudo_user: root
+    when: bootstrap_enabled
+    tags: 
+     - keypair
+
+  # Sanity. Create mysql user before other package takes mysql uid/gid
+  - group: name=mysql state=present gid={{ mysql_gid }}
+    tags: basic_setup 
+  - user: name=mysql comment="MySQL server" uid={{ mysql_uid }} home=/var/lib/mysql group=mysql createhome=no
+    when: bootstrap_enabled
+    tags: basic_setup
+
+  # MHA requires inter-node communication and we also need to stream backups 
+  - template: src=.ssh/authorized_keys  dest=/root/.ssh/authorized_keys owner=root group=root mode=0400
+    sudo_user: root
+    when: bootstrap_enabled
+    tags: 
+     - keypair
+
+   # Common packages
+  - name: Installing common packages.
+    yum: pkg={{ item }} state=present disablerepo=rpmforg*  enablerepo=epel
+    with_items:
+      - https://www.percona.com/redir/downloads/percona-release/redhat/latest/percona-release-0.1-3.noarch.rpm
+      - wget
+      - sysstat
+      - tcpdump
+      - dstat
+      - unzip
+      - percona-toolkit
+      - percona-xtrabackup
+      - xfsprogs
+      - MySQL-python
+    tags: 
+     - install_common_packages
+
+  # automagically create any user which has a pubkey in roles/common/files/users
+  - group: name={{ dba_group }} state=present gid={{ dba_gid }}
+    when: bootstrap_enabled
+    tags: users
+
+  - template: src=etc/sudoers.d/dba dest=/etc/sudoers.d/dba owner=root group=root mode=0440
+    when: bootstrap_enabled
+    tags: users
+
+  - user: name={{ item }} group={{ dba_group }} home=/home/{{item}}
+    with_items:
+        - {{my_backup_user}}
+        - {{my_purge_user}}
+        - {{my_root_user}}
+        - {{my_repl_user}}
+        - {{my_mha_user}}
+    ignore_errors: yes
+    tags: users
+
+  - file: path=/home/{{item}}/.ssh state=directory owner={{item}} group={{dba_group}} mode=0700
+    with_items:
+        - {{my_backup_user}}
+        - {{my_purge_user}}
+        - {{my_root_user}}
+        - {{my_repl_user}}
+        - {{my_mha_user}}
+    ignore_errors: yes
+    tags: users
+
+  - copy: src=users/{{item}} dest=/home/{{item}}/.ssh/authorized_keys owner={{item}} group={{dba_group}} mode=0644
+    with_items:
+        - {{my_backup_user}}
+        - {{my_purge_user}}
+        - {{my_root_user}}
+        - {{my_repl_user}}
+        - {{my_mha_user}}
+    ignore_errors: yes
+    tags: users
+
+  - name: Stop Iptables
+    service: name=iptables state=stopped
+  - service: name=iptables enabled=no
+
+  - file: path={{ dbdir }} state=directory
+    when: "mysql_role != 'mha_manager'"
+
+  # Checking crond daemon
+  - service: name=crond enabled=yes
+  - service: name=crond state=started

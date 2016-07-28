@@ -1,0 +1,10 @@
+---
+
+- name: install_grafana
+  yum: name=grafana state=installed
+
+- name: copy_config.js
+  template: src=config.js.j2 dest=/var/www/html/grafana/config.js
+
+- name: start_grafana
+  service: name=grafana-server state=started enabled=yes

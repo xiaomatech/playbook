@@ -1,0 +1,18 @@
+---
+# file: roles/mysql_server/tasks/main.yml
+
+- name: predefine MySQL root passwd
+  shell: executable=/bin/bash debconf-set-selections <<< "mysql-server-5.5 mysql-server/root_password password hive_{{ site_name }}"
+  tags: mysql
+
+- name: predefine MySQL root passwd confirm
+  shell: executable=/bin/bash debconf-set-selections <<< "mysql-server-5.5 mysql-server/root_password_again password hive_{{ site_name }}"
+  tags: mysql
+
+- name: install MySQL via apt
+  apt: name={{ item }}
+  with_items:
+    - Percona-Server-server-57
+    - mysql-connector-java
+    - MySQL-python
+  tags: mysql

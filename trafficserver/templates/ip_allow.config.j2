@@ -1,0 +1,24 @@
+# {{ ansible_managed }}
+#
+# ip_allow.config
+#
+# Rules:
+# src_ip=<range of IP addresses> action=<action> [method=<list of methods separated by '|'>]
+#
+# Actions: ip_allow, ip_deny
+# 
+# Multiple method keywords can be specified (method=GET method=HEAD), or
+# multiple methods can be separated by an '|' (method=GET|HEAD).  The method
+# keyword is optional and it is defaulted to ALL.
+# Available methods: ALL, GET, CONNECT, DELETE, HEAD, ICP_QUERY, OPTIONS,
+# POST, PURGE, PUT, TRACE, PUSH
+#
+# Rules are applied in the order listed starting from the top.
+# That means you generally want to append your rules after the ones listed here.
+#
+# Allow anything on localhost (this is the default configuration based on the
+# depricated CONFIG proxy.config.http.quick_filter.mask INT 0x482)
+
+{% for allowed in ats_allowed_ips %}
+src_ip={{ allowed.ip }}		action={{ allowed.action }} {% if allow.method is defined %}method={{ allowed.method }}{% endif %}
+{% endfor %}

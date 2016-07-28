@@ -1,0 +1,19 @@
+#!/bin/bash -e
+
+for dev in /dev/sd[bcd]; do
+    if [ ! -e $dev ]; then
+        echo "ERROR: Device $dev does not exist"
+        exit 1
+    fi
+    if (! grep -q $dev /etc/fstab); then
+        mkfs.xfs -f -i size=512 $dev
+        bricknum=1
+        while [ -e /data/brick${bricknum} ]; do
+            bricknum=$[$bricknum+1]
+        done
+        mkdir -p /data/brick${bricknum}
+        echo "$dev /data/brick${bricknum} xfs defaults 0 0"  >> /etc/fstab
+        mount $dev
+        mkdir -p /data/brick${bricknum}/files
+    fi
+done

@@ -1,0 +1,5 @@
+---
+- name: restart ats
+  service:
+    name: "{{ ats_daemon }}"
+    state: restarted

@@ -1,0 +1,9 @@
+---
+
+- name: Installing rsyslog packages.
+    yum: pkg={{ item }} state=latest
+    with_items:
+      - rsyslog
+      - rsyslog-kafka
+    tags:
+     - install

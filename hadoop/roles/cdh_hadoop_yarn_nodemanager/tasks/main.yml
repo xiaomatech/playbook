@@ -1,0 +1,14 @@
+---
+# file: roles/cdh_hadoop_yarn_nodemanager/tasks/main.yml
+
+- name: create the /data/yarn/local directory
+  file: path=/data/yarn/local owner=yarn group=yarn state=directory
+  tags: hadoop
+
+- name: create the /data/yarn/logs directory
+  file: path=/data/yarn/logs owner=yarn group=yarn state=directory
+  tags: hadoop
+
+- name: install hadoop-yarn-nodemanager
+  yum: name=hadoop-yarn-nodemanager state=latest
+  tags: hadoop

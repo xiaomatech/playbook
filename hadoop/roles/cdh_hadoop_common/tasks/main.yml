@@ -1,0 +1,19 @@
+---
+# file: roles/cdh_hadoop_common/tasks/main.yml
+
+- name: install base Hadoop packages
+  yum: name={{ item }} state=latest
+  with_items:
+    - hadoop
+    - hadoop-hdfs
+    - hadoop-lzo
+    - hadoop-yarn
+  tags: hadoop
+
+- name: create the /data directory
+  file: path=/data owner=hdfs group=hdfs state=directory
+  tags: hadoop
+
+- name: create the /data/dfs directory
+  file: path=/data/dfs owner=hdfs group=hdfs state=directory
+  tags: hadoop

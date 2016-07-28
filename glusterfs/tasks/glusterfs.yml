@@ -1,0 +1,76 @@
+- name: install GlusterFS
+  yum: name={{ item }} state=latest
+  with_items:
+  		- glusterfs
+		- glusterfs-api
+		- glusterfs-cli
+		- glusterfs-libs
+		- glusterfs-fuse
+		- python-gluster
+
+- name: Start Gluster Server
+    service: name=glusterfs-server state=started enabled=yes
+
+- name: Verify that each host in the cluster sees every other host in the cluster
+    shell: gluster peer status
+
+
+- name: Create a gluster volume
+    shell: gluster volume create volume1 replica 3 gfs1:/data/brick1/files gfs2:/data/brick1/files gfs3:/data/brick1/files gfs1:/data/brick2/files gfs2:/data/brick2/files gfs3:/data/brick2/files gfs1:/data/brick3/files gfs2:/data/brick3/files gfs3:/data/brick3/files
+    args:
+      creates: /data/brick1/files/.glusterfs
+
+- name: Start the GlusterFS volume
+  shell: gluster volume start volume1
+  args:
+    creates: /data/brick1/files/.glusterfs
+
+- name: Install FS packages
+    apt: name={{ item }} state=latest update_cache=yes
+    with_items:
+    - xfsprogs
+
+- name: Create a script to format and mount drives
+  template: src=templates/format-and-mount.sh.j2 dest=/usr/sbin/format-and-mount-glusterfs owner=root group=root mode=0744
+
+- name: Format and mount drives
+  command: /usr/sbin/format-and-mount-glusterfs
+
+- name: Enable quotas on the volume
+  shell: gluster volume quota volume1 enable && touch /etc/glusterfs/quotas.enabled
+  args:
+    creates: /etc/glusterfs/quotas.enabled
+
+- name: Enable NFS on volume1
+  shell: gluster volume set volume1 nfs.disable off && touch /etc/glusterfs/nfs.volume1.enabled
+  args:
+    creates: /etc/glusterfs/nfs.volume1.enabled
+
+- name: create gluster volume
+  gluster_volume: state=present name={{ gluster_volume_name }} bricks={{ bricks }} rebalance=yes cluster={{ cluster }}
+  run_once: true
+
+- name: tune gluster
+  gluster_volume: state=present name={{ gluster_volume_name }}  options={{ options }}
+  when: options !=''
+
+- name: start gluster volume
+  gluster_volume: state=started name={{ gluster_volume_name }}
+  when: gluster_volume_name !=''
+
+- name: limit usage
+  gluster_volume: state=present name={{ gluster_volume_name }}  directory={{ gluster_volume_dir }} quota={{ quota }}
+  when: quota !=''
+
+- name: stop gluster volume
+  gluster_volume: state=stopped name={{ gluster_volume_name }}
+  when: gluster_volume_name !=''
+
+- name: remove gluster volume
+  gluster_volume: state=absent name={{ gluster_volume_name }}
+  when: gluster_volume_name !=''
+
+- name: create gluster volume with multiple bricks
+  gluster_volume: state=present name={{ gluster_volume_name }}  bricks={{ bricks }}  cluster={{ cluster }}
+  run_once: true
+  when: cluster !='' and bricks !=''

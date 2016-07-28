@@ -1,0 +1,38 @@
+---
+
+- name: install_spark
+  yum: name=spark-core state=installed
+
+- name: copy_spark-defaults.conf
+  template: src=spark-defaults.conf.j2 dest=/etc/spark/conf/spark-defaults.conf
+
+- name: copy_spark-env.sh
+  template: src=spark-env.sh.j2 dest=/etc/spark/conf/spark-env.sh
+
+- name: copy_metrics.properties
+  template: src=metrics.properties.j2 dest=/etc/spark/conf/metrics.properties
+
+- name: configure_SCALA_HOME_in_/etc/default/spark
+  template: src=spark.j2 dest=/etc/default/spark
+
+
+- name: check_hadoop_group_exists
+  shell: grep -e "^hadoop" /etc/group
+  register: check_hadoop_group
+
+- name: add_spark_user_in_hadoop_group
+  user: name=spark groups=hadoop
+  when: check_hadoop_group.rc == 0
+
+- name: add_spark_user
+  user: name=spark
+  when: check_hadoop_group.rc != 0
+
+- name: remove_spark_log_dir
+  shell: hdfs dfs -rm -r /var/log/spark 
+- name: mkdir_spark_log_dir
+  shell: hdfs dfs -mkdir -p /var/log/spark 
+- name: chown_spark_log_dir
+  shell: hdfs dfs -chown spark /var/log/spark 
+- name: chmod_spark_log_dir
+  shell: hdfs dfs -chmod a+w /var/log/spark

@@ -1,0 +1,60 @@
+---
+- file: path={{ dbdir }} owner=mysql group=mysql state=directory
+- file: path={{ datadir }} owner=mysql group=mysql state=directory
+- file: path={{ logsdir }} owner=mysql group=mysql state=directory
+- file: path={{ tmpdir }} owner=mysql group=mysql state=directory
+- file: path={{backup_dir}}/{{ item }} state=directory owner=root
+  with_items:
+      - tmp
+      - full
+  sudo: yes
+  tags: streaming_backup
+
+- name: Install MySQL Client
+  yum: pkg={{ item }} state=present  enablerepo=epel
+  with_items:
+      - MySQL-python
+  tags: pyt
+
+- name: Install MySQL-Oracle Server
+  yum: pkg={{ item }} state=present
+  with_items:
+      - Percona-Server-client-57
+      - Percona-Server-server-57
+      - Percona-Server-tokudb-57
+      - percona-playback 
+      - percona-toolkit
+      - percona-xtrabackup
+  tags: comm
+
+- service: name=mysqld enabled=yes
+
+- name: Create Mysql configuration file
+  template: src=master-my.cnf dest=/etc/my.cnf owner=root group=root mode=0644 
+  tags:
+      - myconf
+
+# custom config
+- copy: src=custom_config/{{ mycnf }} dest=/etc/my.cnf owner=root group=root mode=400
+  when: mycnf is defined
+  tags:
+      - myconf
+
+- name: Ensure mysql is running
+  service: name=mysqld state=started
+  when: "mysql_role == 'master' and bootstrap_enabled" 
+
+- name: Update first time password
+  mysql_user: name=root host=localhost  password={{ my_root_pass }}  priv=*.*:ALL,GRANT
+  tags: myconf
+  when: "mysql_role == 'master' "
+
+- name: Create .my.cnf file with root password credentials
+  template: src=.my.cnf dest=/root/.my.cnf owner=root mode=0600
+  tags: 
+      - myuser
+
+- name: Check if MySQL is up
+  shell: /sbin/service mysql status || true
+  register: mysql_status
+  changed_when: False

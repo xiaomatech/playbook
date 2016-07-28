@@ -1,0 +1,18 @@
+---
+
+- name: install_influxdb
+  yum: name=influxdb state=installed
+
+- name: copy_influxdb_conf
+  template: src=influxdb.conf.j2 dest=/etc/influxdb/influxdb.conf
+  notify:
+    - restart_influxdb
+
+- name: config_limits.conf
+  lineinfile: dest=/etc/security/limits.conf regexp="^{{ item }}" line="{{ item }}"
+  with_items:
+    - "influxdb soft nofile 65536"
+    - "influxdb hard nofile 65536"
+
+- name: start_influxdb
+  service: name=influxdb state=started enabled=yes

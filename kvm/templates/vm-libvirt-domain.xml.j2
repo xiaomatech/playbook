@@ -1,0 +1,59 @@
+<domain type='kvm' id='{{vnet_name}}'>
+  <name>{{ vm_name }}</name>
+  <title>{{ vm_name }} - {{vm_ip}}</title> 
+  <memory unit='MB'>{{ vm_memory }}</memory>
+  <currentMemory unit='MB'>{{ vm_memory }}</currentMemory>
+  <vcpu placement='static'>{{ vm_cpu }}</vcpu>
+  <os>
+    <type arch='x86_64' machine='rhel6.7'>hvm</type>
+    <kernel>{{ vm_kernel_filename }}</kernel>
+    <initrd>{{ vm_initrd_filename }}</initrd>
+    <cmdline>root=UUID={{ vm_root_device_uuid }} ro quiet console=ttyS0</cmdline>
+    <boot dev='hd'/>
+  </os>
+  <features>
+    <acpi/>
+    <apic/>
+    <pae/>
+  </features>
+  <cpu mode='host-passthrough'/>
+  <clock offset='localtime'/>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>restart</on_crash>
+  <devices>
+    <emulator>/usr/libexec/qemu-kvm</emulator>
+    <disk type='block' device='disk'>
+      <driver name='qemu' type='raw' cache="none" io="threads"/>
+      <source dev='/dev/{{ vm_volume_group }}/{{ vm_name }}'/>
+      <target dev='sda' bus='virtio'/>
+    </disk>
+    <controller type='usb' index='0'>
+      <alias name='usb0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x2'/>
+    </controller>
+    <interface type='bridge'>
+      <mac address='{{vm_mac}}'/>
+      <source bridge='{{ vm_bridge }}'/>
+      <target dev='vnet_{{vnet_name}}'/>
+      <model type='virtio'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
+      <driver>
+        <host csum='off' gso='off' tso4='off' tso6='off' ecn='off' ufo='off' mrg_rxbuf='off'/>
+        <guest csum='off' tso4='off' tso6='off' ecn='off' ufo='off'/>
+      </driver>
+    </interface>
+    <serial type='pty'>
+      <target port='0'/>
+    </serial>
+    <console type='pty'>
+      <target type='serial' port='0'/>
+    </console>
+    <input type='tablet' bus='usb'/>
+    <input type='mouse' bus='ps2'/>
+    <memballoon model='virtio'>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x06' function='0x0'/>
+    </memballoon>
+  </devices>
+</domain>
+

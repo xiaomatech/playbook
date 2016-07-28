@@ -1,0 +1,275 @@
+---
+# Site Configuration
+# ==================
+
+- hosts: all
+  user: root
+  tasks:
+    - name: determine interface
+      set_fact: ipv4_address="{{ hostvars[inventory_hostname].ansible_default_ipv4.address }}"
+      # eg. to use a eth1: ipv4_address="{{ hostvars[inventory_hostname].ansible_eth1.ipv4.address }}"
+
+- hosts: all
+  user: root
+  sudo: true
+  roles:
+    - common
+    - ganglia_monitor
+    - { role: oracle_jdk, when: jdk_installed is not defined }
+
+- hosts: elasticsearch
+  user: root
+  sudo: true
+  roles:
+    - elasticsearch
+    - elasticsearch_curator
+
+- hosts: monitors[0]
+  user: root
+  sudo: true
+  roles:
+    - ganglia_metad
+    - ganglia_web
+    - kibana
+    - smokeping
+
+- hosts: all
+  user: root
+  sudo: true
+  roles:
+    - td_agent
+    - rsyslog_fluentd
+
+# Hadoop
+
+- hosts: zookeepers:journalnodes:resourcemanager:nodemanagers:historyserver:hbase_masters:regionservers
+  user: root
+  sudo: true
+  roles:
+    - cdh_common
+    - cdh_hadoop_config
+
+- hosts: zookeepers
+  user: root
+  sudo: true
+  roles:
+    - cdh_zookeeper_server
+
+- hosts: journalnodes
+  user: root
+  sudo: true
+  roles:
+    - cdh_hadoop_journalnode
+
+- hosts: namenodes[0]
+  user: root
+  sudo: true
+  sudo_user: hdfs
+  tasks:
+    - name: create the /data/dfs/nn directory
+      file: path=/data/dfs/nn owner=hdfs group=hdfs state=directory
+      tags:
+        - hadoop
+        - hbase
+        - hive
+    - name: format the namenode - WILL NOT FORMAT IF /data/dfs/nn/current/VERSION EXISTS TO AVOID DATA LOSS
+      command: creates=/data/dfs/nn/current/VERSION hdfs namenode -format -force
+      tags:
+        - hadoop
+        - hbase
+        - hive
+
+- hosts: namenodes[0]
+  user: root
+  sudo: true
+  roles:
+    - cdh_hadoop_namenode
+    - cdh_hadoop_zkfc
+
+- hosts: namenodes[1]
+  user: root
+  sudo: true
+  sudo_user: hdfs
+  tasks:
+    - name: wait for the first namenode to come online
+      wait_for: host={{ hostvars[groups['namenodes'][0]].ipv4_address|default(hostvars[groups['namenodes'][0]].ansible_default_ipv4.address) }} port=50070
+      tags:
+        - hadoop
+        - hbase
+        - hive
+    - name: create the /data/dfs/nn directory
+      file: path=/data/dfs/nn owner=hdfs group=hdfs state=directory
+      tags:
+        - hadoop
+        - hbase
+        - hive
+    - name: bootstrap the standby namenode
+      shell: creates=/data/dfs/nn/.bootstrapped hdfs namenode -bootstrapStandby && touch /data/dfs/nn/.bootstrapped
+      tags:
+        - hadoop
+        - hbase
+        - hive
+
+- hosts: namenodes[1]
+  user: root
+  sudo: true
+  roles:
+    - cdh_hadoop_namenode
+    - cdh_hadoop_zkfc
+
+- hosts: namenodes[0]
+  user: root
+  sudo: true
+  tasks:
+    - name: format hadoop-hdfs-zkfc
+      shell: creates=/data/dfs/.zkfsformatted hdfs zkfc -formatZK -force && touch /data/dfs/.zkfsformatted
+      tags:
+        - hadoop
+        - hbase
+        - hive
+    - name: start zkfc
+      service: name=hadoop-hdfs-zkfc state=restarted
+      tags:
+        - hadoop
+        - hbase
+        - hive
+    - name: restart namenode
+      service: name=hadoop-hdfs-namenode state=restarted
+      tags:
+        - hadoop
+        - hbase
+        - hive
+
+- hosts: datanodes
+  user: root
+  sudo: true
+  roles:
+    - cdh_hadoop_datanode
+
+- hosts: nodemanagers
+  user: root
+  sudo: true
+  roles:
+    - cdh_hadoop_mapreduce
+
+- hosts: hbase_masters:regionservers
+  user: root
+  sudo: true
+  roles:
+    - cdh_hbase_config
+
+- hosts: namenodes[0]
+  user: root
+  sudo: true
+  sudo_user: hdfs
+  tasks:
+    - name: create /tmp directory on the cluster
+      shell: creates=/data/dfs/.tmpdircreated hadoop fs -mkdir /tmp && touch /data/dfs/.tmpdircreated
+      tags:
+        - hadoop
+        - hadoop_fs
+    - name: make sure the /tmp directory has the correct permissions
+      shell: creates=/data/dfs/.tmpdirchowned sleep 5 && hadoop fs -chmod -R 1777 /tmp && touch /data/dfs/.tmpdirchowned
+      tags:
+        - hadoop
+        - hadoop_fs
+    - name: create a /user/history directory on the cluster
+      shell: creates=/data/dfs/.historydircreated hadoop fs -mkdir /user/history && touch /data/dfs/.historydircreated
+      tags:
+        - hadoop
+        - hadoop_fs
+    - name: make sure the /user/history directory has the correct permissions
+      shell: creates=/data/dfs/.historydirchmodded sleep 5 && hadoop fs -chmod -R 1777 /user/history && touch /data/dfs/.historydirchmodded
+      tags:
+        - hadoop
+        - hadoop_fs
+    - name: make sure the /user/history directory has the correct owner
+      shell: creates=/data/dfs/.historydirchowned sleep 5 && hadoop fs -chown yarn:mapred /user/history && touch /data/dfs/.historydirchowned
+      tags:
+        - hadoop
+        - hadoop_fs
+    - name: create the /hbase directory on the cluster
+      shell: creates=/data/dfs/.hbasedircreated hadoop fs -mkdir /hbase && touch /data/dfs/.hbasedircreated
+      tags:
+        - hbase
+        - hadoop_fs
+    - name: make sure the /hbase directory has the correct owner
+      shell: creates=/data/dfs/.hbasedirchowned sleep 5 && hadoop fs -chown hbase:hbase /hbase && touch /data/dfs/.hbasedirchowned
+      tags:
+        - hbase
+        - hadoop_fs
+
+- hosts: resourcemanager
+  user: root
+  sudo: true
+  roles:
+    - cdh_hadoop_yarn_resourcemanager
+
+- hosts: nodemanagers
+  user: root
+  sudo: true
+  roles:
+    - cdh_hadoop_yarn_nodemanager
+
+- hosts: historyserver
+  user: root
+  sudo: true
+  roles:
+    - cdh_hadoop_mapreduce_historyserver
+    - cdh_hadoop_yarn_proxyserver
+
+- hosts: hbase_masters
+  user: root
+  sudo: true
+  roles:
+    - cdh_hbase_master
+
+- hosts: regionservers
+  user: root
+  sudo: true
+  roles:
+    - cdh_hbase_regionserver
+
+- hosts: hive_metastore
+  user: root
+  sudo: true
+  roles:
+    - { role: postgresql_server, when: hive_metastore == "postgresql" }
+    - { role: cdh_hive_postgresql_metastore, when: hive_metastore == "postgresql" }
+    - { role: mysql_server, when: hive_metastore == "mysql" }
+    - { role: cdh_hive_mysql_metastore, when: hive_metastore == "mysql" }
+    - cdh_hive_config
+
+- hosts: hive_metastore
+  user: root
+  sudo: true
+  roles:
+    - cdh_hive_metastore
+
+- hosts: namenodes[0]
+  user: root
+  sudo: true
+  sudo_user: hdfs
+  tasks:
+    - name: create a /user/hive/warehouse directory on the cluster
+      shell: creates=/data/dfs/.hivewarehousedircreated hadoop fs -mkdir /user/hive/warehouse && touch /data/dfs/.hivewarehousedircreated
+      tags:
+        - hive
+        - hadoop_fs
+    - name: make sure the /user/hive/warehouse directory has the correct permissions
+      shell: creates=/data/dfs/.hivewarehousedirchmodded sleep 5 && hadoop fs -chmod -R 1777 /user/hive/warehouse && touch /data/dfs/.hivewarehousedirchmodded
+      tags:
+        - hive
+        - hadoop_fs
+
+- hosts: presto_coordinators
+  user: root
+  sudo: true
+  roles:
+    - presto_coordinator
+
+- hosts: presto_workers
+  user: root
+  sudo: true
+  roles:
+    - presto_worker

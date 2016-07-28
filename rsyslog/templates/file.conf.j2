@@ -1,0 +1,8 @@
+$InputFileName {{ file_path }} #文件路径
+$InputFileTag {{ file_tag }} #日志写入日志附加标签字符串
+$InputFileStateFile /data/rsyslog/{{ file_tag }}.stat #定义记录偏移量数据文件名
+$InputFileSeverity info  #日志等级
+$InputFileFacility local6 #日志类型
+$InputFilePersistStateInterval 20 #回写偏移量数据到文件间隔时间 秒
+$InputFilePollInterval 1 #检查日志文件间隔 秒
+$InputRunFileMonitor

@@ -1,0 +1,5 @@
+---
+
+- name: install hadoop-mapreduce 
+  yum: name=hadoop-mapreduce state=latest
+  tags: hadoop

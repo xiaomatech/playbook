@@ -1,0 +1,6 @@
+#!/bin/bash
+ifdown {{ dpdk_device_name | default("em2") }}
+modprobe vfio-pci
+chmod a+x /dev/vfio 
+chmod 0666 /dev/vfio/*
+dpdk_nic_bind --bind=vfio-pci {{ dpdk_device_name | default("em2") }}

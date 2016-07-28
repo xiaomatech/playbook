@@ -1,0 +1,7 @@
+---
+- hosts: vm-host
+  roles:
+    - { role: ansible-kvm }
+  tags:
+    - vm-create
+

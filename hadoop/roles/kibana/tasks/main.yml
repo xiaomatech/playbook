@@ -1,0 +1,8 @@
+---
+# file: roles/kibana/tasks/main.yml
+
+- name: install kibana
+  yum: name=kibana state=latest
+  tags: kibana
+  notify:
+    - restart apache2

@@ -1,0 +1,131 @@
+---
+# For openstack VMs modify the mount point below depending on if the Openstack
+# VM deploy tool defaults to mounting ephemeral disks
+- name: umount ceph disk (if on openstack)
+  mount:
+    name: /mnt
+    src: /dev/vdb
+    fstype: ext3
+    state: unmounted
+  when: ceph_docker_on_openstack
+
+- name: verify if the disk was already prepared
+  shell: "lsblk -o PARTLABEL {{ item }} | grep -sq 'ceph'"
+  failed_when: false
+  with_items: ceph_osd_docker_devices
+  register: osd_prepared
+
+# use shell rather than docker module
+# to ensure osd disk prepare finishes before
+# starting the next task
+- name: prepare ceph osd disk
+  shell: |
+    docker run --net=host \
+    --pid=host \
+    --privileged=true \
+    --name="{{ ansible_hostname }}-osd-prepare-{{ item.0 |
+    regex_replace('/', '') }}" \
+    -v /etc/ceph:/etc/ceph \
+    -v /var/lib/ceph/:/var/lib/ceph/ \
+    -v /dev:/dev \
+    -e "OSD_DEVICE={{ item.0 }}" \
+    -e "{{ ceph_osd_docker_prepare_env }}" \
+    "{{ ceph_osd_docker_username }}/{{ ceph_osd_docker_imagename }}:{{ ceph_osd_docker_image_tag }}" \
+    OSD_CEPH_DISK_PREPARE
+  with_together:
+    - ceph_osd_docker_devices
+    - osd_prepared.results
+  when:
+    - item.1.get("rc", 0) != 0
+    - ceph_osd_docker_prepare_env is defined
+    - not osd_containerized_deployment_with_kv
+
+- name: prepare ceph osd disk with kv_store
+  shell: |
+    docker run  --net=host   \
+    --pid=host \
+    --privileged=true \
+    --name="{{ ansible_hostname }}-osd-prepare-{{ item.0 |
+    regex_replace('/', '') }}" \
+    -v /dev:/dev \
+    -e "OSD_DEVICE={{ item.0 }}" \
+    -e "{{ ceph_osd_docker_prepare_env }}" \
+    -e CEPH_DAEMON=osd_ceph_disk_prepare \
+    -e KV_TYPE={{kv_type}} \
+    -e KV_IP={{kv_endpoint}} \
+    -e KV_PORT={{kv_port}} \
+    "{{ ceph_osd_docker_username }}/{{ ceph_osd_docker_imagename }}:{{ ceph_osd_docker_image_tag }}" \
+  with_together:
+    - ceph_osd_docker_devices
+    - osd_prepared.results
+  when:
+    - item.1.get("rc", 0) != 0
+    - ceph_osd_docker_prepare_env is defined
+    - osd_containerized_deployment_with_kv
+
+# Use systemd to manage container on appropriate host
+- name: generate systemd unit file
+  become: true
+  template:
+    src: "{{ role_path }}/templates/ceph-osd.service.j2"
+    dest: /etc/systemd/system/ceph-osd@.service
+    owner: "root"
+    group: "root"
+    mode: "0644"
+  failed_when: false
+  when: ansible_os_family == 'RedHat' or ansible_os_family == 'CoreOS'
+
+- name: enable systemd unit file for osd instance
+  shell: systemctl enable ceph-osd@{{ item | basename }}.service
+  failed_when: false
+  changed_when: false
+  with_items: ceph_osd_docker_devices
+  when: ansible_os_family == 'RedHat' or ansible_os_family == 'CoreOS'
+
+- name: reload systemd unit files
+  shell: systemctl daemon-reload
+  changed_when: false
+  failed_when: false
+  when: ansible_os_family == 'RedHat' or ansible_os_family == 'CoreOS'
+
+- name: systemd start osd container
+  service:
+    name: ceph-osd@{{ item | basename }}
+    state: started
+    enabled: yes
+  changed_when: false
+  with_items: ceph_osd_docker_devices
+  when: ansible_os_family == 'RedHat' or ansible_os_family == 'CoreOS'
+
+- name: run the ceph osd docker image
+  docker:
+    image: "{{ ceph_osd_docker_username }}/{{ ceph_osd_docker_imagename }}:{{ ceph_osd_docker_image_tag }}"
+    name: "{{ ansible_hostname }}-osd-{{ item | regex_replace('/', '') }}"
+    net: host
+    pid: host
+    state: started
+    privileged: yes
+    env: "OSD_DEVICE={{ item }},{{ ceph_osd_docker_extra_env }}"
+    volumes: "/var/lib/ceph:/var/lib/ceph,/etc/ceph:/etc/ceph,/dev:/dev,/run:/run"
+  with_items: ceph_osd_docker_devices
+  when:
+    - ansible_os_family != 'RedHat'
+    - ansible_os_family != 'CoreOS'
+    - not osd_containerized_deployment_with_kv
+
+- name: run the ceph osd docker image with kv
+  docker:
+    image: "{{ ceph_osd_docker_username }}/{{ ceph_osd_docker_imagename }}:{{ ceph_osd_docker_image_tag }}"
+    name: "{{ ansible_hostname }}-osd-{{ item | regex_replace('/', '') }}"
+    net: host
+    pid: host
+    state: running
+    privileged: yes
+    env: "KV_TYPE={{kv_type}},KV_IP={{kv_endpoint}},OSD_DEVICE={{ item }},{{ ceph_osd_docker_extra_env }}"
+    volumes: "/dev/:/dev/"
+  with_items: ceph_osd_docker_devices
+  when:
+   - ansible_os_family != 'RedHat'
+   - ansible_os_family != 'CoreOS'
+   - osd_containerized_deployment_with_kv
+ 

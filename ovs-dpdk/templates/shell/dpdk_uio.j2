@@ -1,0 +1,4 @@
+#!/bin/bash
+ifdown {{ dpdk_device_name | default("em2") }}
+modprobe igb_uio
+dpdk_nic_bind --bind=igb_uio {{ dpdk_device_name | default("em2") }}

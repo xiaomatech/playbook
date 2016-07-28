@@ -1,0 +1,10 @@
+---
+
+- name: install_mongodb
+  yum: name={{ item }} state=installed
+  with_items:
+    - mongodb
+    - mongodb-server
+
+- name: start_mongodb_on_start
+  service: name=mongod state=started enabled=yes

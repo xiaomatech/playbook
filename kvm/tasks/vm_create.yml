@@ -1,0 +1,63 @@
+---
+
+- name: find kernel file name
+  shell: ls -1t /boot/vmlinuz-* |sort -rn | head -n1
+  register: kernel_filename_discovery
+
+- name: register kernel file name
+  set_fact: vm_kernel_filename={{ kernel_filename_discovery.stdout }}
+
+- name: find initrd file name
+  shell: ls -1t /boot/initramfs-* |sort -rn | head -n1
+  register: initramfs_filename_discovery
+
+- name: register initrd file name
+  set_fact: vm_initrd_filename={{ initramfs_filename_discovery.stdout }}
+
+- name: get vnet name
+  shell: echo {{vm_ip}}|md5sum|awk '{print $1}'|cut -c 10-36
+  register: vnet_name_discovery
+
+- name: register vnet name
+  set_fact: vnet_name={{ vnet_name_discovery.stdout }}
+
+- name: get vm mac setup 1
+  shell: echo {{vm_ip}}|awk -F '.' '{print 102,33,$1,$2,$3,$4}'>/tmp/{{vm_ip}}_mac
+
+- name: get vm mac setup 2
+  shell: printf "%.2x:%.2x:%.2x:%.2x:%.2x:%.2x" `cat /tmp/{{vm_ip}}_mac`
+  register: vm_mac_discovery
+
+- name: register vm mac
+  set_fact: vm_mac={{ vm_mac_discovery.stdout }}
+
+- name: define vm
+  virt: command=define name={{ vm_name }} xml="{{ lookup('template', '../templates/vm-libvirt-domain.xml.j2') }}" uri=qemu:///system
+  when: "net_type == ''"
+
+- name: get sriov confiure
+  shell: cat /tmp/sriov/`ls /tmp/sriov/|head -n 1`
+  register: sriov_confiure
+  when: "net_type == 'sriov'"
+
+- name: define vm sriov not vlan
+  virt: command=define name={{ vm_name }} xml="{{ lookup('template', '../templates/libvirt/hostdev-pci-sriov-lvm.xml.j2') }}" uri=qemu:///system
+  when: "net_type == 'sriov'"
+
+- name: mv sriov confiure to use
+  shell: mv /tmp/sriov/unuse/`ls /tmp/sriov/|head -n 1` /tmp/sriov/use/{{ vm_name }}
+  when: "net_type == 'sriov'"
+
+- name: define vm vhostuser
+  virt: command=define name={{ vm_name }} xml="{{ lookup('template', '../templates/libvirt/net-vhostuser-multiq.xml.j2') }}" uri=qemu:///system
+  when: "net_type == 'vhostuser'"
+
+- name: define vm openvswitch
+  virt: command=define name={{ vm_name }} xml="{{ lookup('template', '../templates/libvirt/net-openvswitch.xml.j2') }}" uri=qemu:///system
+  when: "net_type == 'openvswitch'"
+
+- name: autostart vm
+  virt: command=autostart name={{ vm_name }} uri=qemu:///system
+
+- name: start vm
+  virt: state=running name={{ vm_name }} uri=qemu:///system

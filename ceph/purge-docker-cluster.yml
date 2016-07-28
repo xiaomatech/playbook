@@ -1,0 +1,43 @@
+---
+# This playbook purges a containerized Ceph cluster
+# It removes: packages, configuration files and ALL THE DATA
+
+- hosts:
+  - mons
+  - osds
+
+  tasks:
+
+  - name: install the latest version of gdisk
+    package:
+      name: gdisk
+      state: present
+
+  - name: collect ceph containers
+    shell: docker ps -aq --filter="ancestor=ceph/daemon"
+    register: containers
+
+  - name: delete ceph containers
+    shell: docker rm -f {{ item }}
+    with_items: containers.stdout_lines
+
+  - name: purge ceph directories
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_items:
+      - /etc/ceph/
+      - /var/lib/ceph/
+
+- hosts:
+  - osds
+
+  tasks:
+
+  - name: disk zap
+    command: sgdisk --zap-all --clear --mbrtogpt -g -- {{ item }}
+    with_items: ceph_osd_docker_devices
+
+  - name: disk zap again
+    command: sgdisk --zap-all --clear --mbrtogpt -g -- {{ item }}
+    with_items: ceph_osd_docker_devices

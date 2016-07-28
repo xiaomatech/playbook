@@ -1,0 +1,15 @@
+---
+
+- include: install.yml
+
+- include: quagga.yml
+  tags: [config_quagga]
+  when: config_quagga is defined and config_quagga
+
+- include: keepalived.yml
+  tags: [config_keepalived]
+  when: config_keepalived is defined and config_keepalived
+
+- include: conntrackd.yml
+  tags: [config_conntrackd]
+  when: config_conntrackd is defined and config_conntrackd

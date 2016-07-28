@@ -1,0 +1,14 @@
+---
+# file: roles/cdh_hbase-master/tasks/main.yml
+
+- name: configre rsyslog for hbase-master
+  template: src=rsyslog.conf dest=/etc/rsyslog.d/60-hbase-master.conf owner=root group=root mode=0644
+  tags: rsyslog
+  notify:
+    - restart rsyslog
+
+- name: install hbase-master 
+  yum: name=hbase-master state=latest
+  tags: hbase
+  notify:
+    - start hbase-master

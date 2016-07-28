@@ -1,0 +1,211 @@
+# {{ ansible_managed }}
+##############################################################################
+# *NOTE*: All options covered in this file should be documented in the docs:
+#
+#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/records.config.en.html
+##############################################################################
+
+##############################################################################
+# Thread configurations. Docs:
+#    https://docs.trafficserver.apache.org/records.config#proxy-config-exec-thread-autoconfig
+##############################################################################
+CONFIG proxy.config.exec_thread.autoconfig INT {{ (ats_records.proxy.config.exec_thread.autoconfig.value if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.exec_thread is defined and ats_records.proxy.config.exec_thread.autoconfig is defined) | default("1") }}
+CONFIG proxy.config.exec_thread.autoconfig.scale FLOAT {{ (ats_records.proxy.config.exec_thread.autoconfig.scale if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.exec_thread is defined and ats_records.proxy.config.exec_thread.autoconfig is defined) | default("1.500000") }}
+CONFIG proxy.config.exec_thread.limit INT {{ (ats_records.proxy.config.exec_thread.limit if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.exec_thread is defined) | default("2") }}
+CONFIG proxy.config.ssl.number.threads INT {{ (ats_records.proxy.config.ssl.number.threads if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.ssl is defined and ats_records.proxy.config.ssl.number is defined) | default("0") }}
+CONFIG proxy.config.accept_threads INT {{ (ats_records.proxy.config.accept_threads if ats_records.proxy is defined and ats_records.proxy.config is defined) | default("1") }}
+CONFIG proxy.config.task_threads INT {{ (ats_records.proxy.config.task_threads if ats_records.proxy is defined and ats_records.proxy.config is defined) | default("2") }}
+CONFIG proxy.config.cache.threads_per_disk INT {{ (ats_records.proxy.config.cache.threads_per_disk if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.cache is defined) | default("8") }}
+
+# https://docs.trafficserver.apache.org/records.config#proxy-config-exec-thread-affinity
+CONFIG proxy.config.exec_thread.affinity INT {{ (ats_records.proxy.config.exec_thread.affinity if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.exec_thread is defined) | default("0") }}
+
+##############################################################################
+# Specify server addresses and ports to bind for HTTP and HTTPS. Docs:
+#    https://docs.trafficserver.apache.org/records.config#proxy-config-http-server-ports
+##############################################################################
+CONFIG proxy.config.http.server_ports STRING {{ (ats_records.proxy.config.http.server_ports if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("80") }}
+
+##############################################################################
+# Via: headers. Docs:
+#     https://docs.trafficserver.apache.org/records.config#proxy-config-http-insert-response-via-str
+##############################################################################
+CONFIG proxy.config.http.insert_request_via_str INT {{ (ats_records.proxy.config.http.insert_request_via_str if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("1") }}
+CONFIG proxy.config.http.insert_response_via_str INT {{ (ats_records.proxy.config.http.insert_response_via_str if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("0") }}
+
+##############################################################################
+# Parent proxy configuration, in addition to these settings also see parent.config. Docs:
+#    https://docs.trafficserver.apache.org/records.config#parent-proxy-configuration
+#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/parent.config.en.html
+##############################################################################
+CONFIG proxy.config.http.parent_proxy_routing_enable INT {{ (ats_records.proxy.config.http.parent_proxy_routing_enable if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("0") }}
+CONFIG proxy.config.http.parent_proxy.retry_time INT {{ (ats_records.proxy.config.http.parent_proxy.retry_time if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.parent_proxy is defined) | default("300") }}
+CONFIG proxy.config.http.parent_proxy.connect_attempts_timeout INT {{ (ats_records.proxy.config.http.parent_proxy.connect_attempts_timeout if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.parent_proxy is defined) | default("30") }}
+CONFIG proxy.config.http.forward.proxy_auth_to_parent INT {{ (ats_records.proxy.config.http.forward.proxy_auth_to_parent if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.forward is defined) | default("0") }}
+CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT {{ (ats_records.proxy.config.http.uncacheable_requests_bypass_parent if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("1") }}
+
+##############################################################################
+# HTTP connection timeouts (secs). Docs:
+#    https://docs.trafficserver.apache.org/records.config#http-connection-timeouts
+##############################################################################
+CONFIG proxy.config.http.keep_alive_no_activity_timeout_in INT {{ (ats_records.proxy.config.http.keep_alive_no_activity_timeout_in if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("115") }}
+CONFIG proxy.config.http.keep_alive_no_activity_timeout_out INT {{ (ats_records.proxy.config.http.keep_alive_no_activity_timeout_out if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("120") }}
+CONFIG proxy.config.http.transaction_no_activity_timeout_in INT {{ (ats_records.proxy.config.http.transaction_no_activity_timeout_in if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("30") }}
+CONFIG proxy.config.http.transaction_no_activity_timeout_out INT {{ (ats_records.proxy.config.http.transaction_no_activity_timeout_out if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("30") }}
+CONFIG proxy.config.http.transaction_active_timeout_in INT {{ (ats_records.proxy.config.http.transaction_active_timeout_in if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("900") }}
+CONFIG proxy.config.http.transaction_active_timeout_out INT {{ (ats_records.proxy.config.http.transaction_active_timeout_out if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("0") }}
+CONFIG proxy.config.http.accept_no_activity_timeout INT {{ (ats_records.proxy.config.http.accept_no_activity_timeout if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("120") }}
+CONFIG proxy.config.net.default_inactivity_timeout INT {{ (ats_records.proxy.config.net.default_inactivity_timeout if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.net is defined) | default("86400") }}
+
+##############################################################################
+# Origin server connect attempts. Docs:
+#    https://docs.trafficserver.apache.org/records.config#origin-server-connect-attempts
+##############################################################################
+CONFIG proxy.config.http.connect_attempts_max_retries INT {{ (ats_records.proxy.config.http.connect_attempts_max_retries if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("6") }}
+CONFIG proxy.config.http.connect_attempts_max_retries_dead_server INT {{ (ats_records.proxy.config.http.connect_attempts_max_retries_dead_server if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("3") }}
+CONFIG proxy.config.http.connect_attempts_rr_retries INT {{ (ats_records.proxy.config.http.connect_attempts_rr_retries if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("3") }}
+CONFIG proxy.config.http.connect_attempts_timeout INT {{ (ats_records.proxy.config.http.connect_attempts_timeout if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("30") }}
+CONFIG proxy.config.http.post_connect_attempts_timeout INT {{ (ats_records.proxy.config.http.post_connect_attempts_timeout if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("1800") }}
+CONFIG proxy.config.http.down_server.cache_time INT {{ (ats_records.proxy.config.http.down_server.cache_time if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.down_server is defined) | default("300") }}
+CONFIG proxy.config.http.down_server.abort_threshold INT {{ (ats_records.proxy.config.http.down_server.abort_threshold if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.down_server is defined) | default("10") }}
+
+##############################################################################
+# Negative response caching, for redirects and errors. Docs:
+#    https://docs.trafficserver.apache.org/records.config#negative-response-caching
+##############################################################################
+CONFIG proxy.config.http.negative_caching_enabled INT {{ (ats_records.proxy.config.http.negative_caching_enabled if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("0") }}
+CONFIG proxy.config.http.negative_caching_lifetime INT {{ (ats_records.proxy.config.http.negative_caching_lifetime if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("1800") }}
+
+##############################################################################
+# Proxy users variables. Docs:
+#    https://docs.trafficserver.apache.org/records.config#proxy-user-variables
+##############################################################################
+CONFIG proxy.config.http.anonymize_insert_client_ip INT {{ (ats_records.proxy.config.http.anonymize_insert_client_ip if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("1") }}
+CONFIG proxy.config.http.insert_squid_x_forwarded_for INT {{ (ats_records.proxy.config.http.insert_squid_x_forwarded_for if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("1") }}
+
+##############################################################################
+# Security. Docs:
+#    https://docs.trafficserver.apache.org/records.config#security
+##############################################################################
+CONFIG proxy.config.http.push_method_enabled INT {{ (ats_records.proxy.config.http.push_method_enabled if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("0") }}
+
+##############################################################################
+# Enable / disable HTTP caching. Useful for testing, but also as an
+# overridable (per remap) config
+##############################################################################
+CONFIG proxy.config.http.cache.http INT {{ (ats_records.proxy.config.http.cache.http if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.cache is defined) | default("1") }}
+
+##############################################################################
+# Cache control. Docs:
+#    https://docs.trafficserver.apache.org/records.config#cache-control
+#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/cache.config.en.html
+##############################################################################
+CONFIG proxy.config.http.cache.ignore_client_cc_max_age INT {{ (ats_records.proxy.config.http.cache.ignore_client_cc_max_age if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.cache is defined) | default("1") }}
+CONFIG proxy.config.http.normalize_ae_gzip INT {{ (ats_records.proxy.config.http.normalize_ae_gzip if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined) | default("1") }}
+CONFIG proxy.config.http.cache.cache_responses_to_cookies INT {{ (ats_records.proxy.config.http.cache.cache_responses_to_cookies if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.cache is defined) | default("1") }}
+CONFIG proxy.config.http.cache.cache_urls_that_look_dynamic INT {{ (ats_records.proxy.config.http.cache.cache_urls_that_look_dynamic if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.cache is defined) | default("1") }}
+
+# https://docs.trafficserver.apache.org/records.config#proxy-config-http-cache-when-to-revalidate
+CONFIG proxy.config.http.cache.when_to_revalidate INT {{ (ats_records.proxy.config.http.cache.when_to_revalidate if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.cache is defined) | default("0") }}
+
+# https://docs.trafficserver.apache.org/records.config#proxy-config-http-cache-required-headers
+CONFIG proxy.config.http.cache.required_headers INT {{ (ats_records.proxy.config.http.cache.required_headers if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.cache is defined) | default("2") }}
+
+##############################################################################
+# Heuristic cache expiration. Docs:
+#    https://docs.trafficserver.apache.org/records.config#heuristic-expiration
+##############################################################################
+CONFIG proxy.config.http.cache.heuristic_min_lifetime INT {{ (ats_records.proxy.config.http.cache.heuristic_min_lifetime if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.cache is defined) | default("3600") }}
+CONFIG proxy.config.http.cache.heuristic_max_lifetime INT {{ (ats_records.proxy.config.http.cache.heuristic_max_lifetime if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.cache is defined) | default("86400") }}
+CONFIG proxy.config.http.cache.heuristic_lm_factor FLOAT {{ (ats_records.proxy.config.http.cache.heuristic_lm_factor if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.cache is defined) | default("0.100000") }}
+
+##############################################################################
+# Network. Docs:
+#    https://docs.trafficserver.apache.org/records.config#network
+##############################################################################
+CONFIG proxy.config.net.connections_throttle INT {{ (ats_records.proxy.config.net.connections_throttle if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.net is defined) | default("30000") }}
+
+##############################################################################
+# RAM and disk cache configurations. Docs:
+#    https://docs.trafficserver.apache.org/records.config#ram-cache
+#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/storage.config.en.html
+##############################################################################
+CONFIG proxy.config.cache.ram_cache.size INT {{ (ats_records.proxy.config.cache.ram_cache.size if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.cache is defined and ats_records.proxy.config.cache.ram_cache is defined) | default("-1") }}
+CONFIG proxy.config.cache.ram_cache_cutoff INT {{ (ats_records.proxy.config.cache.ram_cache_cutoff if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.cache is defined) | default("4194304") }}
+
+# https://docs.trafficserver.apache.org/records.config#proxy-config-cache-limits-http-max-alts
+CONFIG proxy.config.cache.limits.http.max_alts INT {{ (ats_records.proxy.config.cache.limits.http.max_alts if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.cache is defined and ats_records.proxy.config.cache.limits is defined and ats_records.proxy.config.cache.limits.http is defined) | default("5") }}
+
+# https://docs.trafficserver.apache.org/records.config#proxy-config-cache-max-doc-size
+CONFIG proxy.config.cache.max_doc_size INT {{ (ats_records.proxy.config.cache.max_doc_size if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.cache is defined) | default("0") }}
+CONFIG proxy.config.cache.min_average_object_size INT {{ (ats_records.proxy.config.cache.min_average_object_size if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.cache is defined) | default("8000") }}
+
+##############################################################################
+# Logging Config. Docs:
+#    https://docs.trafficserver.apache.org/records.config#logging-configuration
+#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/logs_xml.config.en.html
+##############################################################################
+CONFIG proxy.config.log.logging_enabled INT {{ (ats_records.proxy.config.log.logging_enabled if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.log is defined) | default("3") }}
+CONFIG proxy.config.log.max_space_mb_for_logs INT {{ (ats_records.proxy.config.log.max_space_mb_for_logs if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.log is defined) | default("2000") }}
+CONFIG proxy.config.log.max_space_mb_headroom INT {{ (ats_records.proxy.config.log.max_space_mb_headroom if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.log is defined) | default("1000") }}
+CONFIG proxy.config.log.squid_log_enabled INT {{ (ats_records.proxy.config.log.squid_log_enabled if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.log is defined) | default("1") }}
+CONFIG proxy.config.log.squid_log_is_ascii INT {{ (ats_records.proxy.config.log.squid_log_is_ascii if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.log is defined) | default("0") }}
+CONFIG proxy.config.log.rolling_enabled INT {{ (ats_records.proxy.config.log.rolling_enabled if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.log is defined) | default("1") }}
+CONFIG proxy.config.log.rolling_interval_sec INT {{ (ats_records.proxy.config.log.rolling_interval_sec if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.log is defined) | default("86400") }}
+CONFIG proxy.config.log.rolling_size_mb INT {{ (ats_records.proxy.config.log.rolling_size_mb if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.log is defined) | default("10") }}
+CONFIG proxy.config.log.auto_delete_rolled_files INT {{ (ats_records.proxy.config.log.auto_delete_rolled_files if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.log is defined) | default("1") }}
+
+##############################################################################
+# These settings control remapping, and if the proxy allows (open) forward proxy or not. Docs:
+#    https://docs.trafficserver.apache.org/records.config#url-remap-rules
+#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/remap.config.en.html
+##############################################################################
+CONFIG proxy.config.url_remap.remap_required INT {{ (ats_records.proxy.config.url_remap.remap_required if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.url_remap is defined) | default("1") }}
+
+# https://docs.trafficserver.apache.org/records.config#proxy-config-url-remap-pristine-host-hdr
+CONFIG proxy.config.url_remap.pristine_host_hdr INT {{ (ats_records.proxy.config.url_remap.pristine_host_hdr if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.url_remap is defined) | default("0") }}
+
+# https://docs.trafficserver.apache.org/records.config#reverse-proxy
+CONFIG proxy.config.reverse_proxy.enabled INT {{ (ats_records.proxy.config.reverse_proxy.enabled if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.reverse_proxy is defined) | default("1") }}
+
+##############################################################################
+# SSL Termination. Docs:
+#    https://docs.trafficserver.apache.org/records.config#client-related-configuration
+#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/ssl_multicert.config.en.html
+##############################################################################
+CONFIG proxy.config.ssl.client.verify.server INT {{ (ats_records.proxy.config.ssl.client.verify.server if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.ssl is defined and ats_records.proxy.config.ssl.client is defined and ats_records.proxy.config.ssl.client.verify is defined) | default("0") }}
+CONFIG proxy.config.ssl.client.CA.cert.filename STRING {{ (ats_records.proxy.config.ssl.client.CA.cert.filename if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.ssl is defined and ats_records.proxy.config.ssl.client is defined and ats_records.proxy.config.ssl.client.CA is defined and ats_records.proxy.config.ssl.client.CA.cert is defined) | default("NULL") }}
+CONFIG proxy.config.ssl.server.cipher_suite STRING {{ (ats_records.proxy.config.ssl.server.cipher_suite if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.ssl is defined and ats_records.proxy.config.ssl.server is defined) | default("ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2") }}
+
+##############################################################################
+# ICP Configuration. Docs:
+#    https://docs.trafficserver.apache.org/records.config#icp-configuration
+#    https://docs.trafficserver.apache.org/en/latest/reference/configuration/icp.config.en.html
+##############################################################################
+CONFIG proxy.config.icp.enabled INT {{ (ats_records.proxy.config.icp.enabled if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.icp is defined) | default("0") }}
+
+##############################################################################
+# Debugging. Docs:
+#    https://docs.trafficserver.apache.org/records.config#diagnostic-logging-configuration
+##############################################################################
+CONFIG proxy.config.diags.debug.enabled INT {{ (ats_records.proxy.config.diags.debug.enabled if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.diags is defined and ats_records.proxy.config.diags.debug is defined) | default("0") }}
+CONFIG proxy.config.diags.debug.tags STRING {{ (ats_records.proxy.config.diags.debug.tags if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.diags is defined and ats_records.proxy.config.diags.debug is defined) | default("http.*|dns.*") }}
+
+# ToDo: Undocumented
+CONFIG proxy.config.dump_mem_info_frequency INT {{ (ats_records.proxy.config.dump_mem_info_frequency if ats_records.proxy is defined and ats_records.proxy.config is defined) | default("0") }}
+CONFIG proxy.config.http.slow.log.threshold INT {{ (ats_records.proxy.config.http.slow.log.threshold if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.http is defined and ats_records.proxy.config.http.slow is defined and ats_records.proxy.config.http.slow.log is defined) | default("0") }}
+
+##############################################################################
+# Cluster Subsystem. Docs:
+#    https://docs.trafficserver.apache.org/records.config#cluster
+##############################################################################
+LOCAL proxy.local.cluster.type INT 3
+CONFIG proxy.config.cluster.ethernet_interface STRING {{ (ats_records.proxy.config.cluster.ethernet_interface if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.cluster is defined) | default("lo") }}
+CONFIG proxy.config.cluster.cluster_port INT {{ (ats_records.proxy.config.cluster.cluster_port if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.cluster is defined) | default("8086") }}
+CONFIG proxy.config.cluster.rsport INT {{ (ats_records.proxy.config.cluster.rsport if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.cluster is defined) | default("8088") }}
+CONFIG proxy.config.cluster.mcport INT {{ (ats_records.proxy.config.cluster.mcport if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.cluster is defined) | default("8089") }}
+CONFIG proxy.config.cluster.mc_group_addr STRING {{ (ats_records.proxy.config.cluster.mc_group_addr if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.cluster is defined) | default("224.0.1.37") }}
+CONFIG proxy.config.admin.user_id STRING {{ (ats_records.proxy.config.admin.user_id if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.admin is defined) | default("trafficserver") }}
+CONFIG proxy.config.body_factory.template_sets_dir STRING {{ (ats_records.proxy.config.body_factory.template_sets_dir if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.body_factory is defined) | default("/etc/trafficserver/body_factory") }}
+CONFIG proxy.config.url_remap.filename STRING {{ (ats_records.proxy.config.url_remap.filename if ats_records.proxy is defined and ats_records.proxy.config is defined and ats_records.proxy.config.url_remap is defined) | default("remap.config") }}
+CONFIG proxy.config.http_ui_enabled INT {{ (ats_records.proxy.config.http_ui_enabled if ats_records.proxy is defined and ats_records.proxy.config is defined) | default("0") }}

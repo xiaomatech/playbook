@@ -1,0 +1,16 @@
+---
+# file: roles/elasticsearch/tasks/main.yml
+
+- name: install Elasticsearch
+  yum: name=elasticsearch state=latest 
+  tags: elasticsearch
+
+- name: make sure Elasticsearch is enabled and started
+  service: name=elasticsearch enabled=yes state=started
+  tags: elasticsearch
+
+- name: install Elasticsearch marvel plugin
+  command: creates=/usr/share/elasticsearch/plugins/marvel chdir=/usr/share/elasticsearch/bin ./plugin -install elasticsearch/marvel/latest
+  tags: elasticsearch
+  notify:
+    - restart elasticsearch

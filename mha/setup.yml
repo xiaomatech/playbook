@@ -1,0 +1,12 @@
+---
+- hosts: system
+  user: root
+  roles:
+  - common
+
+
+- hosts: databases
+  user: root 
+  roles:
+  - mysql
+

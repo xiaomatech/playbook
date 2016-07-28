@@ -1,0 +1,12 @@
+---
+# file: roles/oracle_jdk/tasks/main.yml
+
+- name: install or update JDK 
+  yum: name={{ item }} state=latest
+  with_items:
+    - java-1.8.0-openjdk
+  tags: java
+
+- name: set fact jdk_installed
+  set_fact: jdk_installed=true
+  tags: java

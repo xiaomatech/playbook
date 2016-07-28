@@ -1,0 +1,9 @@
+---
+- name: start predictionio
+  service: name=predictionio state=started 
+
+- name: stop predictionio
+  service: name=predictionio state=stopped
+
+- name: restart predictionio
+  service: name=predictionio state=restarted

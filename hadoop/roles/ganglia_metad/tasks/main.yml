@@ -1,0 +1,15 @@
+---
+# file: roles/ganglia_metad/tasks/main.yml
+
+- name: install Ganglia meta deamon and rrdtool
+  yum: name={{ item }} state=latest
+  with_items:
+    - ganglia-gmetad
+    - rrdtool
+  tags: ganglia
+
+- name: configure gmetad.conf in /etc/ganglia/gmetad.conf
+  template: src=gmetad.conf dest=/etc/ganglia/gmetad.conf owner=root group=root mode=0644
+  tags: ganglia
+  notify:
+    - restart gmetad

@@ -1,0 +1,16 @@
+---
+# file: roles/cdh_hadoop_datanode/tasks/main.yml
+
+- name: create the /data/dfs/dn directory
+  file: path=/data/dfs/dn owner=hdfs group=hdfs state=directory
+  tags: hadoop
+
+- name: install hadoop-hdfs-datanode
+  yum: name=hadoop-hdfs-datanode sstate=latest
+  tags: hadoop
+
+- name: configure rsyslog for hadoop-hdfs-datanode
+  template: src=rsyslog.conf dest=/etc/rsyslog.d/60-hadoop-hdfs-datanode.conf owner=root group=root mode=0644
+  tags: rsyslog
+  notify:
+    - restart rsyslog

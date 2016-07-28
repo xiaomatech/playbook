@@ -1,0 +1,7 @@
+site_name: meizu
+
+# IPv4 maximum transmission unit, 9216 is the maximum for Intel/Cisco hardware
+mtu: 9216
+
+# Upgrade kernel to 3.13, much improved epoll performance
+upgrade_kernel: no

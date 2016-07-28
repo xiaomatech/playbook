@@ -1,0 +1,22 @@
+---
+- name: install_gmond
+  yum: name=ganglia-gmond state=installed
+
+- name: copy_ganglia_config
+  template: src={{ item }}.j2 dest=/etc/ganglia/{{ item }}
+  with_items:
+    - gmond.conf
+  notify:
+    - restart_gmond
+
+- name: copy_sysconfig_config
+  template: src={{ item }}.j2 dest=/etc/sysconfig/network-scripts/{{ item }}-{{ ganglia_slave_dev }}
+  with_items:
+    - route
+  notify:
+    - restart_gmond
+
+
+- name: start_gmond
+  service: name=gmond state=started enabled=yes
+

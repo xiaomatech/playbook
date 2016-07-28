@@ -1,0 +1,5 @@
+---
+- name: restart fdfs_storaged
+  service: name=fdfs_storaged state=restarted
+- name: restart fdfs_trackerd
+  service: name=fdfs_trackerd state=restarted

@@ -1,0 +1,44 @@
+- name: check hugepages_2M support 
+  shell: if [ `grep -r "pse" /proc/cpuinfo|wc -l` -gt 0 ];then echo true; else echo false;fi;
+  register: hugepages_2M
+
+- name: check hugepages_1G support
+  shell: if [ `grep -r "pdpe1gb" /proc/cpuinfo|wc -l` -gt 0 ];then echo true; else echo false;fi;
+  register: hugepages_1G
+
+- name: Add configuration to GRUB - 1G
+  lineinfile: >
+    dest=/etc/default/grub 
+    line='GRUB_CMDLINE_LINUX_DEFAULT="iommu=pt intel_iommu=on default_hugepagesz=1G hugepagesz=1G hugepages=1"' 
+    insertafter=EOF
+  register: grub_1G_changed
+  when: hugepages_1G.stdout == true
+
+- name: Add configuration to GRUB - 2M
+  lineinfile: >
+    dest=/etc/default/grub 
+    line='GRUB_CMDLINE_LINUX_DEFAULT="iommu=pt intel_iommu=on default_hugepagesz=2M hugepagesz=2M hugepages=1"' 
+    insertafter=EOF
+  register: grub_2M_changed
+  when: hugepages_1G.stdout == false and hugepages_2M.stdout == true
+
+- name: Update GRUB configuration
+  command: grub2-mkconfig -o /etc/grub2.cfg
+  notify: 
+    - restart machine
+    - wait for machine to restart
+  when: grub_1G_changed.changed or grub_2M_changed.changed
+
+- name: Add hugepages mount to fstab - 1G
+  lineinfile: >
+    dest=/etc/fstab
+    line='hugetlbfs    /dev/hugepages    hugetlbfs    pagesize=1G 0 0'
+    insertafter=EOF
+  when: hugepages_1G.stdout == true
+
+- name: Add hugepages mount to fstab - 2M
+  lineinfile: >
+    dest=/etc/fstab
+    line='hugetlbfs    /dev/hugepages    hugetlbfs    defaults 0 0'
+    insertafter=EOF
+  when: hugepages_1G.stdout == false and hugepages_2M.stdout == true

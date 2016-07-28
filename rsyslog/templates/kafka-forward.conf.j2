@@ -1,0 +1,29 @@
+module(load="omkafka")
+module(load="imfile" mode="inotify")
+
+#http://www.rsyslog.com/doc/master/rainerscript/queue_parameters.html
+
+#rsyslog->Kafka->Logstash
+main_queue(
+  queue.workerthreads="1"      # threads to work on the queue
+  queue.dequeueBatchSize="100" # max number of messages to process at once
+  queue.size="10000"           # max queue size
+)
+
+template(name="json2" type="list") {
+  property(name="msg")
+}
+
+ruleset(name="kafka-server"){
+	action(
+	  type="omkafka" 
+	  broker=["localhost:9092"]
+	  type="omkafka"
+	  topic="rsyslog"
+	  template="json2"
+	)
+}
+
+
+
+input(type="imfile" ruleset="kafka-server" File=" {{ file_path }} " tag="{{ file_tag }}")

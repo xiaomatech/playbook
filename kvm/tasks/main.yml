@@ -1,0 +1,6 @@
+---
+- include: host_setup.yml
+- include: vm_partition.yml
+- include: vm_post.yml
+- include: vm_create.yml
+

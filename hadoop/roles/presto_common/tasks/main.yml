@@ -1,0 +1,27 @@
+---
+# file: roles/presto_common/tasks/main.yml
+
+- name: create the /data/presto directory
+  file: path=/data/presto state=directory
+  tags: presto
+
+- name: install Presto at /usr/lib/presto
+  yum: name=presto-server-rpm state=latest
+  tags: presto
+
+- name: configure presto in /usr/lib/presto/etc
+  template: src={{ item }} dest=/etc/presto/{{ item }} owner=root group=root mode=0644
+  with_items:
+    - node.properties
+    - jvm.config
+    - jmx.properties
+    - hive.properties
+    - tpch.properties
+  tags:
+    - configuration
+    - presto
+
+
+- name: install presto command line client
+  yum: name=presto-cli state=latest
+  tags: presto

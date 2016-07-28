@@ -1,0 +1,233 @@
+---
+# This playbook does a rolling update for all the Ceph services
+# Change the value of 'serial:' to adjust the number of server to be updated.
+#
+# The four roles that apply to the ceph hosts will be applied: ceph-common,
+# ceph-mon, ceph-osd and ceph-mds. So any changes to configuration, package updates, etc,
+# will be applied as part of the rolling update process.
+#
+
+# /!\ DO NOT FORGET TO CHANGE THE RELEASE VERSION FIRST! /!\
+
+- name: confirm whether user really meant to upgrade the cluster
+  hosts: localhost
+
+  vars_prompt:
+    - name: ireallymeanit
+      prompt: Are you sure you want to upgrade the cluster?
+      default: 'no'
+      private: no
+
+  tasks:
+  - name: exit playbook, if user did not mean to upgrade cluster
+    fail:
+      msg: >
+        "Exiting rolling_update.yml playbook, cluster was NOT upgraded.
+         To upgrade the cluster, either say 'yes' on the prompt or
+         or use `-e ireallymeanit=yes` on the command line when
+         invoking the playbook"
+    when: ireallymeanit != 'yes'
+
+- hosts:
+  - mons
+  - osds
+  - mdss
+  - rgws
+
+  become: True
+  tasks:
+    - debug: msg="gather facts on all Ceph hosts for following reference"
+    - name: check if sysvinit
+      stat:
+        path: /etc/rc?.d/S??ceph
+        follow: yes
+      register: is_sysvinit
+
+    - name: check if upstart
+      stat:
+        path: /var/lib/ceph/mon/ceph-{{ ansible_hostname }}/upstart
+      register: is_upstart
+
+    - name: check if systemd
+      command: grep -sq systemd /proc/1/comm
+      register: is_systemd
+
+
+- hosts: mons
+  serial: 1
+  become: True
+  vars:
+    upgrade_ceph_packages: True
+    mon_group_name: mons
+
+  pre_tasks:
+    - name: compress the store as much as possible
+      command: ceph tell mon.{{ ansible_hostname }} compact
+
+  roles:
+    - ceph-common
+    - ceph-mon
+
+  post_tasks:
+    - name: restart ceph mons with upstart
+      service:
+        name: ceph-mon
+        state: restarted
+        args: id={{ ansible_hostname }}
+      when: is_upstart.stat.exists == True
+
+    - name: restart ceph mons with sysvinit
+      service:
+        name: ceph
+        state: restarted
+      when: is_sysvinit.stat.exists == True
+
+    - name: restart ceph mons with systemd
+      service:
+        name: ceph-mon@{{ ansible_hostname }}
+        state: restarted
+        enabled: yes
+      when: is_systemd
+
+    - name: select a running monitor
+      set_fact: mon_host={{ item }}
+      with_items: groups.mons
+      when: item != inventory_hostname
+
+    - name: waiting for the monitor to join the quorum...
+      shell: |
+        ceph -s | grep monmap | sed 's/.*quorum//' | egrep -sq {{ ansible_hostname }}
+      register: result
+      until: result.rc == 0
+      retries: 5
+      delay: 10
+      delegate_to: "{{ mon_host }}"
+
+
+- hosts: osds
+  serial: 1
+  become: True
+  vars:
+    upgrade_ceph_packages: True
+    osd_group_name: osds
+
+  pre_tasks:
+    - name: set osd flags
+      command: ceph osd set {{ item }}
+      with_items:
+        - noout
+        - noscrub
+        - nodeep-scrub
+      delegate_to: "{{ groups.mons[0] }}"
+
+  roles:
+    - ceph-common
+    - ceph-osd
+
+  post_tasks:
+    - name: get osd numbers
+      shell: "if [ -d /var/lib/ceph/osd ] ; then ls /var/lib/ceph/osd | cut -d '-' -f 2 ; fi"
+      register: osd_ids
+      changed_when: false
+
+    - name: restart ceph osds (upstart)
+      service:
+        name: ceph-osd-all
+        state: restarted
+      when: is_upstart.stat.exists == True
+
+    - name: restart ceph osds (sysvinit)
+      service:
+        name: ceph
+        state: restarted
+      when: is_sysvinit.stat.exists == True
+
+    - name: restart ceph osds (systemd)
+      service:
+        name: ceph-osd@{{item}}
+        state: restarted
+        enabled: yes
+      with_items: "{{ osd_ids.stdout_lines }}"
+      when: is_systemd
+
+    - name: waiting for clean pgs...
+      shell: |
+        test "$(ceph pg stat | sed 's/^.*pgs://;s/active+clean.*//;s/ //')" -eq "$(ceph pg stat | sed 's/pgs.*//;s/^.*://;s/ //')" && ceph health | egrep -sq "HEALTH_OK|HEALTH_WARN"
+      register: result
+      until: result.rc == 0
+      retries: 10
+      delay: 10
+      delegate_to: "{{ groups.mons[0] }}"
+
+    - name: unset osd flags
+      command: ceph osd unset {{ item }}
+      with_items:
+        - noout
+        - noscrub
+        - nodeep-scrub
+      delegate_to: "{{ groups.mons[0] }}"
+
+
+- hosts: mdss
+  serial: 1
+  become: True
+  vars:
+    upgrade_ceph_packages: True
+    mds_group_name: mdss
+
+  roles:
+    - ceph-common
+    - ceph-mds
+
+  post_tasks:
+    - name: restart ceph mdss with upstart
+      service:
+        name: ceph-mds
+        state: restarted
+        args: id={{ ansible_hostname }}
+      when: is_upstart.stat.exists == True
+
+    - name: restart ceph mdss with sysvinit
+      service:
+        name: ceph
+        state: restarted
+        args: mds
+      when: is_sysvinit.stat.exists == True
+
+    - name: restart ceph mdss with systemd
+      service:
+        name: ceph-mds@{{ ansible_hostname }}
+        state: restarted
+        enabled: yes
+      when: is_systemd
+
+- hosts: rgws
+  serial: 1
+  become: True
+  vars:
+    upgrade_ceph_packages: True
+    rgw_group_name: rgws
+
+  roles:
+    - ceph-common
+    - ceph-rgw
+
+  post_tasks:
+    - name: restart ceph rgws with systemd
+      service:
+        name: ceph-radosgw@rgw.{{ ansible_hostname }}
+        state: restarted
+        enabled: yes
+      when: is_systemd
+
+    - name: restart ceph rgws with sysvinit
+      service:
+        name: radosgw
+        state: restarted
+      when: ansible_os_family != 'RedHat'
+
+    - name: restart rados gateway server(s)
+      service:
+        name: ceph-radosgw
+        state: restarted
+      when: ansible_os_family != 'RedHat'

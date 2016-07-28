@@ -1,0 +1,10 @@
+---
+
+- include: ovs.yml
+  when: net_type == 'ovs' or net_type == 'dpdk'
+
+- include: hugepages.yml
+  when: net_type == 'dpdk'
+
+- include: dpdk.yml
+  when: net_type == 'dpdk'

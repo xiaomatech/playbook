@@ -1,0 +1,14 @@
+---
+# file: roles/postgresql_server/tasks/main.yml
+
+- name: install PostgreSQL 
+  yum: name={{ item }} state=latest
+  with_items:
+    - postgresql
+    - python-psycopg2
+    - postgresql-jdbc
+  tags: postgres
+
+- name: install PostgreSQL contrib
+  yum: name=postgresql-contrib state=latest
+  tags: postgres

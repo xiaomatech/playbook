@@ -1,0 +1,63 @@
+---
+- name: mount vm filesystem
+  mount: name=/mnt/vm-{{ vm_name }} src=/dev/{{ vm_volume_group }}/{{ vm_name }} fstype=xfs state=mounted opts=defaults,data=ordered,nodirtime,noatime,usrquota,grpquota
+  tags: mount
+
+- name: copy some more files into vm (locale, repo, dns,sudo,ntp)
+  command: cp -p {{ item }} /mnt/vm-{{ vm_name }}/{{ item }}
+  with_items:
+    - /etc/yum.repos.d/custom.repo
+    - /etc/sysconfig/i18n
+    - /etc/resolv.conf
+    - /etc/localtime
+    - /etc/sudoers
+    - /etc/ntp.conf
+  register: system_files_setup
+
+- name: create vm /etc/fstab
+  template: src=vm-fstab.j2 dest=/mnt/vm-{{ vm_name }}/etc/fstab
+
+- name: create vm network intefaces
+  template: src=vm-interfaces.j2 dest=/mnt/vm-{{ vm_name }}/etc/sysconfig/network-scripts/
+
+- name: specify vm hostname
+  get_url: url={{get_hostname_url}}/{{vm_ip}} dest=/tmp/{{vm_ip}}
+  shell: cat /tmp/{{vm_ip}}
+  template: src=vm-hostname.j2 dest=/mnt/vm-{{ vm_name }}/etc/sysconfig/network
+  register: vm_hostname_discovery
+  when: get_hostname_url is defined and get_hostname_url !=''
+
+- name: set vm hostname
+  set_fact: vm_hostname={{ vm_name }}
+
+- name: get vm hostname
+  set_fact: vm_hostname={{ vm_hostname_discovery.stdout }}
+  when: get_hostname_url is defined and get_hostname_url !=''
+
+- name: create vm /etc/hosts
+  template: src=vm-hosts.j2 dest=/mnt/vm-{{ vm_name }}/etc/hosts
+
+- name: create home for current user on vm
+  file:
+    path=/mnt/vm-{{ vm_name }}/home/{{ ansible_ssh_user }}
+    state=directory
+    owner={{ ansible_ssh_user }} group={{ ansible_ssh_user }}
+  when: ansible_ssh_user != 'root'
+
+- name: create /root/.ssh on new vm
+  file: path=/mnt/vm-{{ vm_name }}/home/{{ ansible_ssh_user }}/.ssh state=directory
+
+- name: copy authorized_keys 
+  copy: src=/home/{{ ansible_ssh_user }}/.ssh/authorized_keys dest=/mnt/vm-{{ vm_name }}/home/{{ ansible_ssh_user }}/.ssh/authorized_keys mode=440
+  when: ansible_ssh_user != 'root'
+
+- name: copy current user to vm
+  shell: grep ^{{ ansible_ssh_user }} /etc/passwd >> /mnt/vm-{{ vm_name }}/etc/passwd
+  when: ansible_ssh_user != 'root' 
+
+- name: copy current user group to vm
+  shell: grep ^{{ ansible_ssh_user }} /etc/group >> /mnt/vm-{{ vm_name }}/etc/group
+  when: ansible_ssh_user != 'root'
+
+## todo delete /etc/yum.repos.d
+

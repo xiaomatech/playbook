@@ -1,0 +1,19 @@
+---
+- name: add_kafka_group
+  group: name=kafka
+
+- name: add_kafka_user
+  user: name=kafka group=kafka
+
+- name: install spark
+  yum: name={{ item }} state=latest
+  with_items:
+    - spark
+  tags: spark
+
+- name: copy_properties
+  template: src={{ item }}.j2 dest=/opt/kafka/config/{{ item }}
+  with_items:
+    - server.properties
+    - consumer.properties
+    - producer.properties

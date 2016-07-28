@@ -1,0 +1,24 @@
+---
+# file: roles/ganglia_web/tasks/main.yml
+
+- name: install Ganglia web dependencies via apt
+  apt: name={{ item }}
+  with_items:
+    - httpd
+    - php
+    - rrdtool
+  tags: ganglia
+
+- name: install ganglia-web at /var/www/ganglia
+  yum:  name=ganglia-web state=latest
+  notify:
+    - restart apache2
+  tags: ganglia
+
+- name: make sure ganglia-web makefile has the correct path
+  command: creates=/var/lib/ganglia-web/dwoo chdir=/var/www/ganglia sed -i "s=/var/www/html/ganglia=/var/www/ganglia=" Makefile
+  tags: ganglia
+
+- name: make sure ganglia-web makefile has the correct user
+  command: creates=/var/lib/ganglia-web/dwoo chdir=/var/www/ganglia sed -i "s/APACHE_USER =  apache/APACHE_USER = www-data/" Makefile
+  tags: ganglia

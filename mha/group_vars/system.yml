@@ -1,0 +1,28 @@
+---
+
+# secrets needed by MHA manager 
+
+my_admin_pass: fourtytwo
+my_mha_pass: fourtytwo
+my_repl_pass: fourtytwo
+
+#xtrabackup
+my_backup_pass: fourtytwo
+
+#mha log purge
+my_purge_pass: fourtytwo
+
+my_root_pass: fourtytwo
+
+#rotate logs
+my_reload_pass: fourtytwo
+
+# keypair 
+root_ssh_privkey: |
+    -----BEGIN RSA PRIVATE KEY-----
+    -----END RSA PRIVATE KEY-----
+
+root_ssh_pubkey: |
+    rsa_pubkey_placeholder (the indention is important)
+
+

@@ -1,0 +1,36 @@
+<domain type='qemu'>
+  <name>{{ vm_name }}</name>
+  <memory unit='KiB'>{{ vm_memory }}</memory>
+  <currentMemory unit='KiB'>{{ vm_memory }}</currentMemory>
+  <vcpu placement='static'>{{ vm_cpu }}</vcpu>
+  <os>
+    <type arch='x86_64' machine='rhel6.7'>hvm</type>
+    <kernel>{{ vm_kernel_filename }}</kernel>
+    <initrd>{{ vm_initrd_filename }}</initrd>
+    <cmdline>root=UUID={{ vm_root_device_uuid }} ro quiet console=ttyS0</cmdline>
+    <boot dev='hd'/>
+  </os>
+  <cpu mode='host-passthrough'/>
+  <clock offset='localtime'/>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>destroy</on_crash>
+  <devices>
+    <emulator>/usr/libexec/qemu-kvm</emulator>
+    <disk type='block' device='disk'>
+      <driver name='qemu' type='raw' cache="none" io="threads"/>
+      <source dev='/dev/{{ vm_volume_group }}/{{ vm_name }}'/>
+      <target dev='sda' bus='virtio'/>
+    </disk>
+
+    {{ sriov_confiure.stdout }}
+
+    <serial type='pty'>
+      <target port='0'/>
+    </serial>
+    <console type='pty'>
+      <target type='serial' port='0'/>
+    </console>
+    <memballoon model='virtio'/>
+  </devices>
+</domain>
