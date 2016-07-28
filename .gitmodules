@@ -1,0 +1,6 @@
+[submodule "h3c"]
+	path = h3c
+	url = git://github.com/HPENetworking/ansible-hpe-cw7.git
+[submodule "ceph"]
+	path = ceph
+	url = git://github.com/ceph/ceph-ansible.git
